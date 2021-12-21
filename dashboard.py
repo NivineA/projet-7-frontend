@@ -73,9 +73,7 @@ def main():
         data_age = load_age_population()
         # Set the style of plots
         plt.style.use('fivethirtyeight')
-        width = st.sidebar.slider("plot width", 0.1, 25., 3.)
-        height = st.sidebar.slider("plot height", 0.1, 25., 1.)
-        fig=plt.figure(figsize=(width, height))
+        fig=plt.figure(figsize=(6, 6))
         # Plot the distribution of ages in years
         h1=plt.hist(data_age, edgecolor = 'k', bins = 25)
         plt.axvline(int(infos_client["DAYS_BIRTH"].values / -365), color="red", linestyle=":")
@@ -107,9 +105,7 @@ def main():
         data_revenus = load_revenus_population()
         # Set the style of plots
         plt.style.use('fivethirtyeight')
-        width = st.sidebar.slider("plot width", 1., 15., 3.)
-        height = st.sidebar.slider("plot height", 1., 15., 1.)
-        fig=plt.figure(figsize=(width, height))
+        fig=plt.figure(figsize=(6,6))
         # Plot the distribution of revenus
         sns.histplot(data_revenus)
         plt.axvline((infos_client["AMT_INCOME_TOTAL"][0]), color="red", linestyle=":")
