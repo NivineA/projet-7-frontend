@@ -13,10 +13,10 @@ Permettre de visualiser des informations descriptives relatives à un client (vi
 Permettre de comparer les informations descriptives relatives à un client à l’ensemble des clients ou à un groupe de clients similaires.
 
 
-## Fichiers utilisés:
+## Fichiers utilisés:   
 
-1- Installation d'un environnement virtuel venv_7
-2- Fichiers demandés pour le déploiement:
-    Procfile
-    setup.sh
-    requirement.txt
+1- Installation d'un environnement virtuel venv_7    
+2- Fichiers demandés pour le déploiement:    
+    Procfile    
+    setup.sh   
+    requirement.txt   
