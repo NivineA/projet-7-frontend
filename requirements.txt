@@ -25,7 +25,7 @@ entrypoints==0.3
 fonttools==4.28.5
 gitdb==4.0.9
 GitPython==3.1.24
-heroku==0.1.4
+heroku3==5.1.4
 idna==3.3
 importlib-resources==5.4.0
 ipykernel==6.5.0
@@ -70,7 +70,7 @@ Pygments==2.10.0
 Pympler==0.9
 pyparsing==3.0.6
 pyrsistent==0.18.0
-python-dateutil==2.8.2
+python-dateutil==2.7.3
 pytz==2021.3
 pytz-deprecation-shim==0.1.0.post0
 pywin32==302;platform_system == "Windows"
