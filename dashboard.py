@@ -165,7 +165,7 @@ def main():
 def load_logo():
     # Construction de la sidebar
     # Chargement du logo
-    logo = Image.open("C:\\Users\\nivin\\Desktop\\formation\\projet\\Projet 7\\projet-7-frontend\\logo.png") 
+    logo = Image.open("logo.png") 
     return logo
 
 @st.cache()
