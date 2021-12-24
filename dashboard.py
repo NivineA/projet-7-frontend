@@ -9,7 +9,9 @@ import json
 import seaborn as sns
 import time
 import shap
-URL_API = 'http://127.0.0.1:5000/'
+import os
+
+URL_API = 'https://projet-7-backend.herokuapp.com/'
 
 def main():
 
@@ -163,7 +165,7 @@ def main():
 def load_logo():
     # Construction de la sidebar
     # Chargement du logo
-    logo = Image.open("C:\\Users\\nivin\\Desktop\\formation\\projet\\Projet 7\\Projet_7_frontend\\logo.png") 
+    logo = Image.open("C:\\Users\\nivin\\Desktop\\formation\\projet\\Projet 7\\projet-7-frontend\\logo.png") 
     return logo
 
 @st.cache()
