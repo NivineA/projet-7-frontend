@@ -22,4 +22,4 @@ Permettre de comparer les informations descriptives relatives à un client à l�
     requirement.txt   
 
 ## Dashboard link: 
-https://git.heroku.com/projet-7-frontend.git
+  https://projet-7-frontend.herokuapp.com

@@ -1,4 +1,5 @@
 from ctypes import string_at
+from matplotlib.figure import Figure
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,156 +11,304 @@ import seaborn as sns
 import time
 import shap
 import os
+import plotly.graph_objects as go
+from traitlets.traitlets import default
 
-URL_API = 'https://projet-7-backend.herokuapp.com/'
+
+URL_API = 'https://projet-7-frontend.herokuapp.com/'
 
 def main():
 
     # Affichage du titre et du sous-titre
-    st.title("Implémenter un modèle de scoring")
-    st.markdown("<i>API répondant aux besoins du projet 7 pour le parcours Data Scientist OpenClassRoom</i>", unsafe_allow_html=True)
+    st.title("Dashboard de Prêt à Dépenser")
+    st.markdown("<i>Implémentez un modèle de scoring</i>", unsafe_allow_html=True)
 
-    # Affichage d'informations dans la sidebar
-    st.sidebar.subheader("Informations générales")
-
-# Chargement du logo
+    #Chargement du logo
     logo = load_logo()
     st.sidebar.image(logo,width=200)
 
-# Chargement de la selectbox
+    # Affichage d'informations dans la sidebar
+    st.sidebar.header(":memo:Informations du client")
+    # Chargement de la selectbox
     lst_id = load_selectbox()
     global id_client
     id_client = st.sidebar.selectbox("ID Client", lst_id)
 
- # Chargement des infos générales
-    nb_credits, revenu_moy, credits_moy, targets = load_infos_gen()
-
-    # Affichage des infos dans la sidebar
-    # Nombre de crédits existants
-    st.sidebar.markdown("<u>Nombre crédits existants dans la base :</u>", unsafe_allow_html=True)
-    st.sidebar.text(nb_credits)
-
-    # Graphique camembert
-    st.set_option('deprecation.showPyplotGlobalUse', False)
-    st.sidebar.markdown("<u>Différence solvabilité / non solvabilité</u>", unsafe_allow_html=True)
-
-    plt.pie(targets, explode=[0, 0.1], labels=["Solvable", "Non solvable"], autopct='%1.1f%%',
-            shadow=True, startangle=90)
-    st.sidebar.pyplot()
-    
-
-    # Revenus moyens
-    st.sidebar.markdown("<u>Revenus moyens $(USD) :</u>", unsafe_allow_html=True)
-    st.sidebar.text(revenu_moy)
-
-    # Montant crédits moyen
-    st.sidebar.markdown("<u>Montant crédits moyen $(USD) :</u>", unsafe_allow_html=True)
-    st.sidebar.text(credits_moy)
-
      # Affichage de l'ID client sélectionné
     st.write("Vous avez sélectionné le client :", id_client)
 
-    # Affichage état civil
-    st.header("**Informations client**")
-
-    if st.checkbox("Afficher les informations du client?"):
+    #Afficher les informations du client":
         
-        infos_client = identite_client()
-        st.write("Sex :**", infos_client["CODE_GENDER_M"][0], "**")
-        st.markdown("<i>Sex = 0 :  Client Femelle    Sex = 1 :   Client Mâle</i>", unsafe_allow_html=True)
-        st.write("Statut famille :**", infos_client['NAME_FAMILY_STATUS_Married'][0], "**")
-        st.markdown("<i>Statut famille  = 0 :   Non Marié(e)     Statut famille = 1 :   Marié(e)</i>", unsafe_allow_html=True)
-        st.write("Age client :", int(infos_client["DAYS_BIRTH"].values / -365), "ans.")
-        st.write("Année emploi :", int(infos_client["DAYS_EMPLOYED"].values / -365), "ans.")
-
-        data_age = load_age_population()
+    infos_client = identite_client()
+    st.sidebar.write("**Age client :**", int(infos_client['DAYS_BIRTH'].values /-365), "ans")
+    st.sidebar.write("**Sex :**", infos_client['CODE_GENDER'][0])
+    st.sidebar.write("**Statut famille :**", infos_client['NAME_FAMILY_STATUS'][0]) 
+    st.sidebar.write("**Education :**", infos_client["NAME_EDUCATION_TYPE"][0])
+    if int(infos_client["DAYS_EMPLOYED"].values /-365)<0 or int(infos_client["DAYS_EMPLOYED"].values /-365)>100:
+        st.sidebar("**Année d'emploi :**",  "inconnu")
+    else:
+        st.sidebar.write("**Année d'emploi :**", int(infos_client["DAYS_EMPLOYED"].values /-365), "ans")
+    st.sidebar.write("**Type de revenu :**", infos_client["NAME_INCOME_TYPE"][0])
+    st.sidebar.write("**Revenu :**", int(infos_client["AMT_INCOME_TOTAL"].values ), "euros")
+    st.sidebar.write("**Type du contrat :**", infos_client["NAME_CONTRACT_TYPE"][0])
+    st.sidebar.write("**Montant crédit :**", int(infos_client["AMT_CREDIT"].values ), "euros")
+    st.sidebar.write("**Montant annuité :**", int(infos_client["AMT_ANNUITY"].values ), "euros")
+# Afficher les graphiques des variables:
+    st.sidebar.header(":bar_chart:Plus d'informations")
+    st.sidebar.subheader("Visualisations univariées")
+    variables=['DAYS_BIRTH','CODE_GENDER', 'NAME_FAMILY_STATUS', "NAME_EDUCATION_TYPE", "DAYS_EMPLOYED","NAME_INCOME_TYPE", 
+    "AMT_INCOME_TOTAL", "NAME_CONTRACT_TYPE", "AMT_CREDIT", "AMT_ANNUITY"]
+    features=st.sidebar.multiselect("les variables à illustrer:", variables)
+    for feature in features:
         # Set the style of plots
         plt.style.use('fivethirtyeight')
         fig=plt.figure(figsize=(6, 6))
-        # Plot the distribution of ages in years
-        h1=plt.hist(data_age, edgecolor = 'k', bins = 25)
-        plt.axvline(int(infos_client["DAYS_BIRTH"].values / -365), color="red", linestyle=":")
-        plt.title('Age des Clients', size=5)
-        plt.xlabel('Age (Années)', size=5)
-        plt.ylabel('Fréquence', size=5)
+        if feature=='DAYS_BIRTH':
+        # Plot the distribution of feature
+            st.write( feature)
+            h1=plt.hist(load_age_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(int(infos_client["DAYS_BIRTH"].values / -365), color="red", linestyle=":")
+            plt.title('Age des Clients', size=5)
+            plt.xlabel('Age (Années)', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            st.pyplot(fig)
+
+        elif feature=='DAYS_EMPLOYED':
+            st.write( feature)
+            h1=plt.hist(load_days_employed_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(int(infos_client["DAYS_EMPLOYED"].values / -365), color="red", linestyle=":")
+            plt.title('Années emplois des Clients', size=5)
+            plt.xlabel('Années emplois (Années)', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            st.pyplot(fig)
+
+        elif feature=='CODE_GENDER':
+            st.write(feature)
+            h1=plt.hist(load_sex_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(infos_client["CODE_GENDER"].item(), color="red", linestyle=":")
+            plt.title('Genre des Clients', size=5)
+            plt.xlabel('Genre', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            st.pyplot(fig)
+
+        elif feature=='NAME_FAMILY_STATUS':
+            st.write(feature)
+            h1=plt.hist(load_family_status_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(infos_client["NAME_FAMILY_STATUS"].item(), color="red", linestyle=":")
+            plt.title('Statut de famille des Clients', size=5)
+            plt.xlabel('Statut de famille', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            st.pyplot(fig)
+
+        elif feature=='NAME_EDUCATION_TYPE':
+            st.write(feature)
+            h1=plt.hist(load_education_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(infos_client["NAME_EDUCATION_TYPE"].item(), color="red", linestyle=":")
+            plt.title('Niveau éducation des Clients', size=5)
+            plt.xlabel('Niveau éducation', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            st.pyplot(fig)
+
+        elif feature=='NAME_INCOME_TYPE':    
+            st.write(feature)
+            h1=plt.hist(load_income_type_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(infos_client["NAME_INCOME_TYPE"].item(), color="red", linestyle=":")
+            plt.title('Type de revenus des Clients', size=5)
+            plt.xlabel('Type revenus', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            st.pyplot(fig)
+
+        elif feature=='AMT_INCOME_TOTAL':    
+            st.write(feature)
+            sns.histplot(load_revenus_population())
+            plt.axvline(infos_client["AMT_INCOME_TOTAL"][0], color="red", linestyle=":")
+            plt.title('Revenus des Clients', size=5)
+            plt.xlabel('Revenus en euros', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            plt.xlim([1e5, 8e5])
+            st.pyplot(fig)
+
+        elif feature=='AMT_CREDIT':    
+            st.write(feature)
+            h1=plt.hist(load_credit_population(), edgecolor = 'k', bins = 25)
+            plt.axvline(infos_client["AMT_CREDIT"][0], color="red", linestyle=":")
+            plt.title('Montant crédit des Clients', size=5)
+            plt.xlabel('Montant crédit en euros', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            plt.xlim([1e4, 3e6])
+            st.pyplot(fig)
+
+        elif feature=="AMT_ANNUITY":   
+            st.write(feature)
+            sns.histplot(load_annuity_population())
+            plt.axvline(infos_client["AMT_ANNUITY"][0], color="red", linestyle=":")
+            plt.title('Montant annuités des Clients', size=5)
+            plt.xlabel('Montant annuités en euros', size=5)
+            plt.ylabel('Fréquence', size=5)
+            plt.xticks(size=5)
+            plt.yticks(size=5)
+            plt.xlim([1e3, 1e5])
+            st.pyplot(fig)
+# graphe analyse bivariée:
+    if st.sidebar.checkbox("Visualisez l'analyse bivarié des revenu et montant du crédit des clients"):
+        data_score=load_data_predict()
+        fig=plt.figure(figsize=(8,8))
+        ax=plt.scatter(x=data_score['AMT_INCOME_TOTAL_y'], y=data_score['AMT_CREDIT_y'], c=data_score['score']*100, cmap='viridis')
+        plt.axvline(infos_client["AMT_INCOME_TOTAL"][0], color="red", linestyle=":")
+        plt.axhline(infos_client["AMT_CREDIT"][0], color="red", linestyle=":")
+        norm = plt.Normalize(data_score['score'].min()*100, data_score['score'] .max()*100)
+        sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm)
+        sm.set_array([])
+        ax.figure.colorbar(sm)
+        plt.title('Montant crédit en fonction des revenus des Clients', size=5)
+        plt.xlabel('Revenu en euros', size=5)
+        plt.ylabel('Montant crédit en euros', size=5)
         plt.xticks(size=5)
         plt.yticks(size=5)
-        st.pyplot(fig)
-
-        st.subheader("*Revenus*")
-        
-        st.write("Total revenus client :", infos_client["AMT_INCOME_TOTAL"][0], "$")
-
-
-        st.write('Starting a long computation...')
-
-        # Add a placeholder
-        latest_iteration = st.empty()
-        bar = st.progress(0)
-
-        for i in range(100):
-        # Update the progress bar with each iteration.
-            latest_iteration.text(f'Iteration {i+1}')
-            bar.progress(i + 1)
-            time.sleep(0.5)
-
-        st.write('...and now we\'re done!')
-        data_revenus = load_revenus_population()
-        # Set the style of plots
-        plt.style.use('fivethirtyeight')
-        fig=plt.figure(figsize=(6,6))
-        # Plot the distribution of revenus
-        sns.histplot(data_revenus)
-        plt.axvline((infos_client["AMT_INCOME_TOTAL"][0]), color="red", linestyle=":")
-        plt.title('Revenus des Clients', size=5)
-        plt.xlabel('Revenus ($ USD)', size=5)
-        plt.ylabel('Fréquence', size=5)
+        plt.ylim([1e4, 3e6])
         plt.xlim([1e5, 8e5])
+        st.pyplot(fig)
+    if st.sidebar.checkbox("Visualisez l'analyse bivarié des revenus et âge des clients"):
+        data_score=load_data_predict()
+        fig=plt.figure(figsize=(8,8))
+        ax=plt.scatter(x=data_score['DAYS_BIRTH_y']/-365, y=data_score['AMT_INCOME_TOTAL_y'], c=data_score['score']*100, cmap='viridis')
+        plt.axvline(infos_client["DAYS_BIRTH"][0]/-365, color="red", linestyle=":")
+        plt.axhline(infos_client["AMT_INCOME_TOTAL"][0], color="red", linestyle=":")
+        norm = plt.Normalize(data_score['score'].min()*100, data_score['score'] .max()*100)
+        sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm)
+        sm.set_array([])
+        ax.figure.colorbar(sm)
+        plt.title('Revenu en fonction de lâge des clients', size=5)
+        plt.xlabel('Age en ans', size=5)
+        plt.ylabel('Revenu en euros', size=5)
         plt.xticks(size=5)
         plt.yticks(size=5)
+        plt.ylim([1e5, 8e5])
         st.pyplot(fig)
 
-        st.write("Montant du crédit :", infos_client["AMT_CREDIT"][0], "$")
-        st.write("Annuités crédit :", infos_client["AMT_ANNUITY"][0], "$")
+    if st.sidebar.checkbox("Visualisez l'analyse bivarié des années emploi et âge des clients"):
+        data_score=load_data_predict()
+        fig=plt.figure(figsize=(8,8))
+        ax=plt.scatter(x=data_score['DAYS_BIRTH_y']/-365, y=data_score['DAYS_EMPLOYED_y']/-365, c=data_score['score']*100, cmap='viridis')
+        plt.axvline(infos_client["DAYS_BIRTH"][0]/-365, color="red", linestyle=":")
+        plt.axhline(infos_client["DAYS_EMPLOYED"][0]/-365, color="red", linestyle=":")
+        norm = plt.Normalize(data_score['score'].min()*100, data_score['score'] .max()*100)
+        sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm)
+        sm.set_array([])
+        ax.figure.colorbar(sm)
+        plt.title('Années emploi en fonction de lâge  des clients', size=5)
+        plt.xlabel('Age en ans', size=5)
+        plt.ylabel('Années emploi en ans', size=5)
+        plt.xticks(size=5)
+        plt.yticks(size=5)
+        plt.ylim([0,30])
+        st.pyplot(fig)
+    
+# Affichage solvabilité client
+    st.header("**Analyse dossier client**")
+    st.markdown("<u>Probabilité de risque de faillite du client :</u>", unsafe_allow_html=True)
+    prediction = load_prediction()
+    risque=round(prediction*100, 2)
+    st.write(risque, "%")
+    st.markdown("<u>Données client :</u>", unsafe_allow_html=True)
+    st.write(identite_client()) 
+    threshold= st.slider("Choisir le seuil",  0, 100, 50)
+    fig=plt.figure(figsize=(6, 6))
+    fig=go.Figure(go.Indicator(domain = {'x': [0, 1], 'y': [0, 1]},
+    value = risque,
+    mode = "gauge+number",
+    title = {'text': "Probabilité de faillite"},
+    gauge = {'axis': {'range': [None, 100]},
+            'bar': {'color': "black", "thickness":0.1},
+             'steps' : [
+                 {'range': [0, 20], 'color': "green"},
+                 {'range': [20, 40], 'color': "blue"},
+                 {'range': [40, 60], 'color': "yellow"},
+                 {'range': [60, 80], 'color': "purple"},
+                 {'range': [80, 100], 'color': "red"}],
+
+             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': threshold}}))
+    
+    st.plotly_chart(fig)
+    if risque<=20:
+        st.success('Risque de faillite qualifiée faible : crédit acceptée')
+    elif risque<=40:
+       st.success('Risque de faillite qualifiée bas : crédit acceptée') 
+    elif risque<=60:
+       st.success('Risque de faillite qualifiée moyen : crédit non acceptée') 
+    elif risque<=80:
+       st.success('Risque de faillite qualifiée bon : crédit non acceptée') 
+    else:
+      st.success('Risque de faillite qualifiée grand : crédit non acceptée')    
+
+
+ # Affichage interprétation du modèle   
+    st.markdown("<u>Interprétation du modèle - Importance des variables locale :</u>", unsafe_allow_html=True)
+    if st.checkbox("Interpréter le modèle"):
+        features=load_features()
+        explained_model=load_model_interpretation_shap()[0]
+        infos_client=load_data_shap()
+        number = st.slider("Choisir le numéro des features...", 0, 30, 5)
+        explained_models=pd.DataFrame(explained_model, columns=features)
+        fig=plt.figure(figsize=(8,8))
+        shap.summary_plot(explained_models, np.hstack(infos_client), max_display=number, plot_type ="bar",  color_bar=False, plot_size=(5, 5))
+        st.pyplot(fig)
+        st.markdown("<u>Interprétation du modèle - Importance des variables globale :</u>", unsafe_allow_html=True) 
+        feature_importance=load_feature_importance()
+        df = pd.DataFrame({'feature': features,
+                                    'importance': feature_importance}).sort_values('importance', ascending = False)
+        df = df.sort_values('importance', ascending = False).reset_index()
+    
+        # Normalize the feature importances to add up to one
+        df['importance_normalized'] = df['importance'] / df['importance'].sum()
+       # Make a horizontal bar chart of feature importances
+        fig=plt.figure(figsize = (15, 10))
+        ax = plt.subplot()
+        # Need to reverse the index to plot most important on top
+        ax.barh(list(reversed(list(df.index[:30]))), 
+            df['importance_normalized'].head(30), 
+            align = 'center', edgecolor = 'k')
+    
+        # Set the yticks and labels
+        ax.set_yticks(list(reversed(list(df.index[:30]))))
+        ax.set_yticklabels(df['feature'].head(30))
+    
+        # Plot labeling
+        plt.xlabel('Normalized Importance'); plt.title('Feature Importances')
+        st.pyplot(fig)
+
+    else:
+            st.markdown("<i>…</i>", unsafe_allow_html=True)
+
+# Affichage des dossiers similaires
+    chk_voisins = st.checkbox("Afficher dossiers similaires?")
+
+    if chk_voisins:
         
+        similar_id = load_voisins()
+        st.markdown("<u>Liste des 10 dossiers les plus proches de ce client :</u>", unsafe_allow_html=True)
+        st.write(similar_id)
+        st.markdown("<i>Target 1 = Client en faillite</i>", unsafe_allow_html=True)
     else:
         st.markdown("<i>Informations masquées</i>", unsafe_allow_html=True)
 
 
-
-    # Affichage solvabilité client
-        st.header("**Analyse dossier client**")
-    
-        st.markdown("<u>Probabilité de risque de faillite du client :</u>", unsafe_allow_html=True)
-        prediction = load_prediction()
-        st.write(round(prediction*100, 2), "%")
-        st.markdown("<u>Données client :</u>", unsafe_allow_html=True)
-        st.write(identite_client()) 
-
-    # Affichage interprétation du modèle   
-        st.markdown("<u>Interprétation du modèle - Importance des variables :</u>", unsafe_allow_html=True)
-        if st.checkbox("Interpréter le modèle"):
-            explained_model=load_model_interpretation()
-            infos_client=identite_client()
-            number = st.slider("Choisir le numéro des features...", 0, 30, 5)
-            features=load_features()
-            explained_model=pd.DataFrame(explained_model, columns=features)
-            fig=shap.summary_plot(explained_model, np.hstack(infos_client), max_display=number, plot_type ="bar",  color_bar=False, plot_size=(5, 5))
-            st.pyplot(fig)
-        
-        else:
-            st.markdown("<i>…</i>", unsafe_allow_html=True)
-    # Affichage des dossiers similaires
-        chk_voisins = st.checkbox("Afficher dossiers similaires?")
-
-        if chk_voisins:
-        
-            similar_id = load_voisins()
-            st.markdown("<u>Liste des 10 dossiers les plus proches de ce client :</u>", unsafe_allow_html=True)
-            st.write(similar_id)
-            st.markdown("<i>Target 1 = Client en faillite</i>", unsafe_allow_html=True)
-        else:
-            st.markdown("<i>Informations masquées</i>", unsafe_allow_html=True)
 
 @st.cache
 def load_logo():
@@ -180,40 +329,24 @@ def load_selectbox():
 
     return lst_id
 
-@st.cache()
-def load_infos_gen():
-
-    # Requête permettant de récupérer :
-    # Le nombre de lignes de crédits existants dans la base
-    # Le revenus moyens des clients
-    # Le montant moyen des crédits existants
-    infos_gen = requests.get(URL_API + "infos_gen")
-    infos_gen = infos_gen.json()
-
-    nb_credits = infos_gen[0]
-    revenu_moy = infos_gen[1]
-    credits_moy = infos_gen[2]
-
-    # Requête permettant de récupérer
-    # Le nombre de target dans la classe 0
-    # et la classe 1
-    targets = requests.get(URL_API + "class_target")    
-    targets = targets.json()
-    return nb_credits, revenu_moy, credits_moy, targets
-
 
 def identite_client():
     # Requête permettant de récupérer les informations du client sélectionné
     testurl = URL_API + "infos_client"
     infos_client = requests.get(testurl, params={ "id_client": id_client })
-    #infos_client = infos_client.json()
-    
-    # On transforme la réponse en dictionnaire python
     infos_client = json.loads(infos_client.content)
-    
     # On transforme le dictionnaire en dataframe
     infos_client = pd.DataFrame.from_dict(infos_client).T
     return infos_client
+
+def load_data_test():
+    # Requête permettant de récupérer les informations du client sélectionné
+    testurl = URL_API + "load_data_test"
+    data_test = requests.get(testurl)
+    data_test = json.loads(data_test.content)
+    data_test = pd.DataFrame.from_dict(data_test).T
+    return data_test
+
 @st.cache
 def load_age_population():
     
@@ -225,14 +358,96 @@ def load_age_population():
     return data_age
 
 @st.cache
+def load_days_employed_population():
+    
+    # Requête permettant de récupérer les années d'emploi de la 
+    # population pour le graphique situant le client
+    data_days_json = requests.get(URL_API + "load_days_employed_population")
+    data_days = data_days_json.json()
+
+    return data_days
+
+@st.cache
+def load_sex_population():
+    
+    # Requête permettant de récupérer les sexes de la 
+    # population pour le graphique situant le client
+    data_genre_json = requests.get(URL_API + "load_sex_population")
+    data_genre = data_genre_json.json()
+
+    return data_genre
+
+@st.cache
+def load_family_status_population():
+    
+    # Requête permettant de récupérer les statuts familles de la 
+    # population pour le graphique situant le client
+    data_famille_json = requests.get(URL_API + "load_family_status_population")
+    data_famille = data_famille_json.json()
+
+    return data_famille
+
+@st.cache
+def load_education_population():
+    
+    # Requête permettant de récupérer les statuts familles de la 
+    # population pour le graphique situant le client
+    data_education_json = requests.get(URL_API + "load_education_population")
+    data_education = data_education_json.json()
+
+    return data_education
+
+@st.cache
+def load_income_type_population():
+    
+    # Requête permettant de récupérer les statuts familles de la 
+    # population pour le graphique situant le client
+    data_income_json = requests.get(URL_API + "load_income_type_population")
+    data_income = data_income_json.json()
+
+    return data_income
+
+    
+@st.cache
+def load_contract_type_population():
+    
+    # Requête permettant de récupérer les statuts familles de la 
+    # population pour le graphique situant le client
+    data_contract_json = requests.get(URL_API + "load_contract_type_population")
+    data_contract = data_contract_json.json()
+
+    return data_contract
+
+
+@st.cache
 def load_revenus_population():
     
     # Requête permettant de récupérer les revenus de la 
     # population pour le graphique situant le client
-    data_revenus_json = requests.get(URL_API + "load_revenus/population")
+    data_revenus_json = requests.get(URL_API + "load_revenus_population")
     data_revenus = data_revenus_json.json()
 
     return data_revenus
+
+@st.cache
+def load_credit_population():
+    
+    # Requête permettant de récupérer les revenus de la 
+    # population pour le graphique situant le client
+    data_credit_json = requests.get(URL_API + "load_credit_population")
+    data_credit = data_credit_json.json()
+
+    return data_credit
+
+@st.cache
+def load_annuity_population():
+    
+    # Requête permettant de récupérer les revenus de la 
+    # population pour le graphique situant le client
+    data_annuity_json = requests.get(URL_API + "load_annuity_population")
+    data_annuity = data_annuity_json.json()
+
+    return data_annuity
 
 @st.cache
 def load_prediction():
@@ -243,13 +458,36 @@ def load_prediction():
     prediction = prediction.json()
     return prediction[1]
 
+@st.cache
+def load_data_predict():
+    # Requête permettant de récupérer les informations du client sélectionné
+    testurl = URL_API + "load_data_predict"
+    infos_clients = requests.get(testurl)
+    infos_clients = json.loads(infos_clients.content)
+    # On transforme le dictionnaire en dataframe
+    infos_clients = pd.DataFrame.from_dict(infos_clients).T
+    return infos_clients
 
 @st.cache
-def load_model_interpretation():
+def load_model_interpretation_shap():
     
     # Requête permettant de récupérer la prédiction
     # de faillite du client sélectionné
-    explained_model = requests.get(URL_API + "model_interpretation", params={"id_client":id_client})
+    explained_model = requests.get(URL_API + "model_interpretation_shap", params={"id_client":id_client})
+    explained_model = explained_model.json()
+    lst_id = []
+    for i in  explained_model:
+        lst_id.append(i)
+    return lst_id
+    
+
+
+@st.cache
+def load_model_interpretation_expected():
+    
+    # Requête permettant de récupérer la prédiction
+    # de faillite du client sélectionné
+    explained_model = requests.get(URL_API + "model_interpretation_expected", params={"id_client":id_client})
     explained_model = explained_model.json()
     
     return explained_model
@@ -265,7 +503,25 @@ def load_features():
         lst_id.append(i)
     return lst_id
 
+@st.cache()
+def load_feature_importance():
+    # Requête permettant de récupérer la liste des features importance
+    data_json = requests.get(URL_API + "load_feature_importance")
+    data = data_json.json()
+      # Récupération des valeurs sans les [] de la réponse
+    lst_id = []
+    for i in data:
+        lst_id.append(i)
+    return lst_id
 
+@st.cache()
+def load_data_shap():
+    testurl = URL_API + "load_data_shap"
+    infos_client = requests.get(testurl, params={ "id_client": id_client })
+    infos_client = json.loads(infos_client.content)
+    # On transforme le dictionnaire en dataframe
+    infos_client = pd.DataFrame.from_dict(infos_client).T
+    return infos_client 
 
 @st.cache
 def load_voisins():
