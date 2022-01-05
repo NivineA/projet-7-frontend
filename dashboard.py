@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 from traitlets.traitlets import default
 
 
-URL_API = 'https://projet-7-frontend.herokuapp.com/'
+URL_API = 'http://127.0.0.1:5000//'
 
 def main():
 
@@ -53,12 +53,15 @@ def main():
     st.sidebar.write("**Type du contrat :**", infos_client["NAME_CONTRACT_TYPE"][0])
     st.sidebar.write("**Montant crédit :**", int(infos_client["AMT_CREDIT"].values ), "euros")
     st.sidebar.write("**Montant annuité :**", int(infos_client["AMT_ANNUITY"].values ), "euros")
-# Afficher les graphiques des variables:
+
+    # Afficher les graphiques des variables:
+
     st.sidebar.header(":bar_chart:Plus d'informations")
     st.sidebar.subheader("Visualisations univariées")
     variables=['DAYS_BIRTH','CODE_GENDER', 'NAME_FAMILY_STATUS', "NAME_EDUCATION_TYPE", "DAYS_EMPLOYED","NAME_INCOME_TYPE", 
     "AMT_INCOME_TOTAL", "NAME_CONTRACT_TYPE", "AMT_CREDIT", "AMT_ANNUITY"]
     features=st.sidebar.multiselect("les variables à illustrer:", variables)
+
     for feature in features:
         # Set the style of plots
         plt.style.use('fivethirtyeight')
@@ -165,8 +168,11 @@ def main():
             plt.yticks(size=5)
             plt.xlim([1e3, 1e5])
             st.pyplot(fig)
-# graphe analyse bivariée:
-    if st.sidebar.checkbox("Visualisez l'analyse bivarié des revenu et montant du crédit des clients"):
+
+    # graphe analyse bivariée:
+
+    if st.sidebar.checkbox("Visualisez l'analyse bivarié des revenus et montant du crédit des clients"):
+        st.write( 'Revenus et montant crédit')
         data_score=load_data_predict()
         fig=plt.figure(figsize=(8,8))
         ax=plt.scatter(x=data_score['AMT_INCOME_TOTAL_y'], y=data_score['AMT_CREDIT_y'], c=data_score['score']*100, cmap='viridis')
@@ -184,7 +190,9 @@ def main():
         plt.ylim([1e4, 3e6])
         plt.xlim([1e5, 8e5])
         st.pyplot(fig)
+
     if st.sidebar.checkbox("Visualisez l'analyse bivarié des revenus et âge des clients"):
+        st.write( 'Revenus et âge')
         data_score=load_data_predict()
         fig=plt.figure(figsize=(8,8))
         ax=plt.scatter(x=data_score['DAYS_BIRTH_y']/-365, y=data_score['AMT_INCOME_TOTAL_y'], c=data_score['score']*100, cmap='viridis')
@@ -203,6 +211,7 @@ def main():
         st.pyplot(fig)
 
     if st.sidebar.checkbox("Visualisez l'analyse bivarié des années emploi et âge des clients"):
+        st.write( 'Age et années emploi')
         data_score=load_data_predict()
         fig=plt.figure(figsize=(8,8))
         ax=plt.scatter(x=data_score['DAYS_BIRTH_y']/-365, y=data_score['DAYS_EMPLOYED_y']/-365, c=data_score['score']*100, cmap='viridis')
@@ -221,6 +230,7 @@ def main():
         st.pyplot(fig)
     
 # Affichage solvabilité client
+
     st.header("**Analyse dossier client**")
     st.markdown("<u>Probabilité de risque de faillite du client :</u>", unsafe_allow_html=True)
     prediction = load_prediction()
@@ -258,13 +268,14 @@ def main():
       st.success('Risque de faillite qualifiée grand : crédit non acceptée')    
 
 
- # Affichage interprétation du modèle   
+ # Affichage interprétation du modèle 
+ #   
     st.markdown("<u>Interprétation du modèle - Importance des variables locale :</u>", unsafe_allow_html=True)
     if st.checkbox("Interpréter le modèle"):
         features=load_features()
         explained_model=load_model_interpretation_shap()[0]
         infos_client=load_data_shap()
-        number = st.slider("Choisir le numéro des features...", 0, 30, 5)
+        number = st.slider("Choisir le numéro des features...", 0, 30, 15)
         explained_models=pd.DataFrame(explained_model, columns=features)
         fig=plt.figure(figsize=(8,8))
         shap.summary_plot(explained_models, np.hstack(infos_client), max_display=number, plot_type ="bar",  color_bar=False, plot_size=(5, 5))
@@ -312,12 +323,11 @@ def main():
 
 @st.cache
 def load_logo():
-    # Construction de la sidebar
     # Chargement du logo
     logo = Image.open("logo.png") 
     return logo
 
-@st.cache()
+@st.cache
 def load_selectbox():
     # Requête permettant de récupérer la liste des ID clients
     data_json = requests.get(URL_API + "load_data")
@@ -340,7 +350,7 @@ def identite_client():
     return infos_client
 
 def load_data_test():
-    # Requête permettant de récupérer les informations du client sélectionné
+    # Requête permettant de récupérer les informations des clients
     testurl = URL_API + "load_data_test"
     data_test = requests.get(testurl)
     data_test = json.loads(data_test.content)
@@ -390,7 +400,7 @@ def load_family_status_population():
 @st.cache
 def load_education_population():
     
-    # Requête permettant de récupérer les statuts familles de la 
+    # Requête permettant de récupérer le niveau d'éducation de la 
     # population pour le graphique situant le client
     data_education_json = requests.get(URL_API + "load_education_population")
     data_education = data_education_json.json()
@@ -400,7 +410,7 @@ def load_education_population():
 @st.cache
 def load_income_type_population():
     
-    # Requête permettant de récupérer les statuts familles de la 
+    # Requête permettant de récupérer le type des revenus de la 
     # population pour le graphique situant le client
     data_income_json = requests.get(URL_API + "load_income_type_population")
     data_income = data_income_json.json()
@@ -411,7 +421,7 @@ def load_income_type_population():
 @st.cache
 def load_contract_type_population():
     
-    # Requête permettant de récupérer les statuts familles de la 
+    # Requête permettant de récupérer le type de contract de la 
     # population pour le graphique situant le client
     data_contract_json = requests.get(URL_API + "load_contract_type_population")
     data_contract = data_contract_json.json()
@@ -432,7 +442,7 @@ def load_revenus_population():
 @st.cache
 def load_credit_population():
     
-    # Requête permettant de récupérer les revenus de la 
+    # Requête permettant de récupérer le montant des crédits de la 
     # population pour le graphique situant le client
     data_credit_json = requests.get(URL_API + "load_credit_population")
     data_credit = data_credit_json.json()
@@ -442,7 +452,7 @@ def load_credit_population():
 @st.cache
 def load_annuity_population():
     
-    # Requête permettant de récupérer les revenus de la 
+    # Requête permettant de récupérer le montant des annuités de la 
     # population pour le graphique situant le client
     data_annuity_json = requests.get(URL_API + "load_annuity_population")
     data_annuity = data_annuity_json.json()
@@ -460,7 +470,7 @@ def load_prediction():
 
 @st.cache
 def load_data_predict():
-    # Requête permettant de récupérer les informations du client sélectionné
+    # Requête permettant de récupérer les informations du client sélectionné avec le score calculé
     testurl = URL_API + "load_data_predict"
     infos_clients = requests.get(testurl)
     infos_clients = json.loads(infos_clients.content)
@@ -471,8 +481,7 @@ def load_data_predict():
 @st.cache
 def load_model_interpretation_shap():
     
-    # Requête permettant de récupérer la prédiction
-    # de faillite du client sélectionné
+    # Requête permettant de récupérer les valeurs shap pour un client séléctionné pour les deux classes
     explained_model = requests.get(URL_API + "model_interpretation_shap", params={"id_client":id_client})
     explained_model = explained_model.json()
     lst_id = []
@@ -480,17 +489,6 @@ def load_model_interpretation_shap():
         lst_id.append(i)
     return lst_id
     
-
-
-@st.cache
-def load_model_interpretation_expected():
-    
-    # Requête permettant de récupérer la prédiction
-    # de faillite du client sélectionné
-    explained_model = requests.get(URL_API + "model_interpretation_expected", params={"id_client":id_client})
-    explained_model = explained_model.json()
-    
-    return explained_model
 
 @st.cache()
 def load_features():
@@ -516,6 +514,7 @@ def load_feature_importance():
 
 @st.cache()
 def load_data_shap():
+    # Requête permettant de récupérer la données utilisés pour l'interprétation du modèle
     testurl = URL_API + "load_data_shap"
     infos_client = requests.get(testurl, params={ "id_client": id_client })
     infos_client = json.loads(infos_client.content)
