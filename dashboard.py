@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 from traitlets.traitlets import default
 
 
-URL_API = 'https://projet-7-backend.herokuapp.com /'
+URL_API = 'https://projet-7-backend.herokuapp.com/'
 
 def main():
 
