@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 from traitlets.traitlets import default
 
 
-URL_API = 'https://projet-7-backend.herokuapp.com/'
+URL_API = 'https://projet-7-backend.herokuapp.com /'
 
 def main():
 
@@ -80,13 +80,15 @@ def main():
 
         elif feature=='DAYS_EMPLOYED':
             st.write( feature)
-            h1=plt.hist(load_days_employed_population(), edgecolor = 'k', bins = 25)
+            h1=sns.histplot(load_days_employed_population(), edgecolor = 'k')
             plt.axvline(int(infos_client["DAYS_EMPLOYED"].values / -365), color="red", linestyle=":")
             plt.title('Années emplois des Clients', size=5)
             plt.xlabel('Années emplois (Années)', size=5)
             plt.ylabel('Fréquence', size=5)
             plt.xticks(size=5)
             plt.yticks(size=5)
+            plt.xlim([0,30])
+            plt.ylim([0,1000])
             st.pyplot(fig)
 
         elif feature=='CODE_GENDER':
